@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>บันทึกการมาทำงาน</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+:root {
+  --bg:#f0f4f8; --white:#fff; --ink:#1a2332; --ink2:#4a5568; --ink3:#a0aec0;
+  --border:#e2e8f0; --green:#16a34a; --gl:#dcfce7; --gm:#bbf7d0;
+  --red:#dc2626; --rl:#fee2e2; --rm:#fecaca;
+  --blue:#2563eb; --bl:#dbeafe; --bm:#bfdbfe;
+  --r:14px;
+}
+body { font-family:'Noto Sans Thai',sans-serif; background:var(--bg); color:var(--ink); min-height:100vh; padding-bottom:110px; }
+
+/* TOP BAR */
+.topbar { background:var(--white); border-bottom:1px solid var(--border); padding:14px 20px; position:sticky; top:0; z-index:100; box-shadow:0 1px 4px rgba(0,0,0,.07); }
+.topbar-inner { max-width:600px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.topbar-left h1 { font-size:1rem; font-weight:800; }
+.topbar-left .sub { font-size:.7rem; color:var(--ink3); font-family:'DM Mono',monospace; margin-top:1px; }
+.date-pill { background:var(--bg); border:1px solid var(--border); border-radius:20px; padding:5px 12px; font-size:.78rem; font-weight:600; color:var(--ink2); cursor:pointer; display:flex; align-items:center; gap:5px; white-space:nowrap; }
+input#date-pick { position:absolute; opacity:0; width:0; height:0; }
+
+/* MAIN */
+.main { max-width:600px; margin:0 auto; padding:14px 14px 0; }
+
+/* DATE NAV */
+.date-nav { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
+.nav-arrow { width:36px; height:36px; background:var(--white); border:1px solid var(--border); border-radius:10px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:.9rem; color:var(--ink2); flex-shrink:0; }
+.nav-arrow:active { background:var(--ink); color:white; }
+.date-label { flex:1; text-align:center; font-size:.88rem; font-weight:700; color:var(--ink); background:var(--white); padding:8px 6px; border-radius:10px; border:1px solid var(--border); }
+.today-tag { background:var(--blue); color:white; font-size:.6rem; font-weight:700; padding:2px 6px; border-radius:10px; margin-left:4px; vertical-align:middle; }
+
+/* QUICK ROW */
+.quick-row { display:flex; gap:8px; margin-bottom:12px; }
+.quick-btn { flex:1; padding:9px 6px; border-radius:10px; border:1.5px solid; font-family:'Noto Sans Thai',sans-serif; font-size:.8rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px; }
+.q-p { border-color:var(--green); color:var(--green); background:var(--gl); }
+.q-p:active { background:var(--green); color:white; }
+.q-a { border-color:var(--red); color:var(--red); background:var(--rl); }
+.q-a:active { background:var(--red); color:white; }
+.q-c { border-color:var(--border); color:var(--ink3); background:var(--white); }
+
+/* EMPLOYEE CARDS */
+.emp-list { display:flex; flex-direction:column; gap:8px; margin-bottom:12px; }
+.emp-card { background:var(--white); border:2px solid var(--border); border-radius:var(--r); padding:10px 12px; display:flex; align-items:center; gap:8px; user-select:none; }
+.emp-card.is-present { border-color:var(--green); background:var(--gl); }
+.emp-card.is-absent  { border-color:var(--red);   background:var(--rl); }
+.emp-num { font-family:'DM Mono',monospace; font-size:.66rem; color:var(--ink3); width:16px; text-align:center; flex-shrink:0; }
+.emp-avatar { width:36px; height:36px; border-radius:50%; background:var(--bg); border:2px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:.85rem; font-weight:700; color:var(--ink2); flex-shrink:0; }
+.emp-card.is-present .emp-avatar { background:var(--gm); border-color:var(--green); color:var(--green); }
+.emp-card.is-absent  .emp-avatar { background:var(--rm); border-color:var(--red);   color:var(--red); }
+.emp-info { flex:1; min-width:0; }
+.emp-name { font-size:.9rem; font-weight:700; }
+.emp-badge { display:inline-block; font-size:.65rem; font-weight:700; padding:1px 7px; border-radius:20px; margin-top:2px; }
+.emp-badge.present { background:var(--green); color:white; }
+.emp-badge.absent  { background:var(--red);   color:white; }
+.emp-badge.none    { background:var(--border); color:var(--ink3); }
+
+/* OT */
+.ot-wrap { display:flex; flex-direction:column; align-items:center; gap:2px; flex-shrink:0; }
+.ot-input { width:44px; padding:5px 2px; border:1.5px solid var(--border); border-radius:8px; font-family:'DM Mono',monospace; font-size:.85rem; font-weight:700; color:var(--blue); text-align:center; background:var(--bg); outline:none; -moz-appearance:textfield; }
+.ot-input::-webkit-outer-spin-button,.ot-input::-webkit-inner-spin-button { -webkit-appearance:none; }
+.ot-input:focus { border-color:var(--blue); background:var(--bl); }
+.ot-label { font-size:.6rem; font-weight:700; color:var(--ink3); }
+
+/* TOGGLE */
+.toggle-wrap { display:flex; gap:5px; flex-shrink:0; }
+.tog { width:40px; height:40px; border-radius:9px; border:2px solid var(--border); background:var(--white); font-size:1rem; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+.tog:active { transform:scale(0.9); }
+.tog.tog-p.on { background:var(--green); border-color:var(--green); }
+.tog.tog-a.on { background:var(--red);   border-color:var(--red); }
+
+/* COLLAPSIBLE */
+.fold-card { background:var(--white); border:1.5px solid var(--border); border-radius:var(--r); overflow:hidden; margin-bottom:12px; }
+.fold-head { padding:12px 16px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; font-size:.88rem; font-weight:700; background:#f8fafc; user-select:none; }
+.fold-head:active { background:var(--bg); }
+.fold-head.open { border-bottom:1px solid var(--border); }
+.fold-chev { color:var(--ink3); font-size:.75rem; transition:transform .2s; }
+.fold-chev.open { transform:rotate(180deg); }
+.fold-body { display:none; padding:12px 14px; }
+.fold-body.open { display:block; }
+
+/* SUMMARY */
+.sum-range-row { display:flex; align-items:flex-end; gap:8px; margin-bottom:10px; flex-wrap:wrap; }
+.sum-range-group { display:flex; flex-direction:column; gap:4px; flex:1; min-width:100px; }
+.sum-range-group label { font-size:.7rem; font-weight:700; color:var(--ink3); }
+.sum-range-group input[type="date"] { padding:7px 8px; border:1.5px solid var(--border); border-radius:8px; font-family:'DM Mono',monospace; font-size:.76rem; color:var(--ink); background:var(--bg); outline:none; width:100%; }
+.sum-range-group input[type="date"]:focus { border-color:var(--blue); }
+.btn-sum { padding:8px 14px; background:var(--blue); color:white; border:none; border-radius:8px; font-family:'Noto Sans Thai',sans-serif; font-size:.82rem; font-weight:700; cursor:pointer; white-space:nowrap; align-self:flex-end; }
+.sum-shortcuts { display:flex; gap:6px; margin-bottom:12px; flex-wrap:wrap; }
+.sum-shortcuts button { padding:5px 12px; border:1.5px solid var(--border); border-radius:20px; background:var(--white); font-family:'Noto Sans Thai',sans-serif; font-size:.75rem; font-weight:600; color:var(--ink2); cursor:pointer; }
+.sum-shortcuts button:active { background:var(--bg); }
+.sum-range-label { font-size:.72rem; color:var(--ink3); margin-bottom:10px; font-family:'DM Mono',monospace; text-align:center; }
+.sum-table { width:100%; border-collapse:collapse; font-size:.8rem; }
+.sum-table th { text-align:left; padding:7px 8px; background:var(--bg); color:var(--ink3); font-size:.68rem; font-weight:700; letter-spacing:.04em; }
+.sum-table th.c { text-align:center; }
+.sum-table td { padding:7px 8px; border-top:1px solid var(--border); }
+.sum-table tr:hover td { background:#fafafa; }
+.td-name { font-weight:700; }
+.td-c { text-align:center; font-family:'DM Mono',monospace; font-weight:700; }
+.td-p { color:var(--green); }
+.td-a { color:var(--red); }
+.td-n { color:var(--ink3); font-weight:400; }
+.td-ot { color:var(--blue); }
+.pct-bar-wrap { height:4px; background:var(--border); border-radius:3px; margin-top:3px; }
+.pct-bar { height:4px; border-radius:3px; }
+
+/* RESULT */
+.result { border-radius:var(--r); padding:12px 14px; margin-bottom:12px; display:none; }
+.result.show { display:block; }
+.result.ok  { background:var(--gl); border:1px solid var(--gm); }
+.result.err { background:var(--rl); border:1px solid var(--rm); }
+.result-title { font-size:.85rem; font-weight:700; margin-bottom:4px; }
+.result.ok  .result-title { color:var(--green); }
+.result.err .result-title { color:var(--red); }
+.result-detail { font-size:.76rem; color:var(--ink2); line-height:1.6; white-space:pre-line; }
+
+/* SAVE BAR */
+.save-bar { position:fixed; bottom:0; left:0; right:0; background:var(--white); border-top:1px solid var(--border); padding:12px 20px; padding-bottom:max(12px,env(safe-area-inset-bottom)); z-index:200; box-shadow:0 -4px 16px rgba(0,0,0,.07); }
+.save-bar-inner { max-width:600px; margin:0 auto; display:flex; gap:10px; align-items:center; }
+.save-status { flex:1; font-size:.78rem; color:var(--ink3); line-height:1.4; }
+.save-status strong { color:var(--ink); display:block; }
+.btn-save { padding:13px 22px; background:var(--blue); color:white; border:none; border-radius:12px; font-family:'Noto Sans Thai',sans-serif; font-size:.9rem; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:6px; box-shadow:0 4px 12px rgba(37,99,235,.3); flex-shrink:0; }
+.btn-save:active { transform:scale(0.97); }
+.btn-save:disabled { opacity:.5; cursor:not-allowed; }
+
+/* OVERLAY */
+.overlay { position:fixed; inset:0; background:rgba(255,255,255,.85); backdrop-filter:blur(4px); z-index:500; display:none; align-items:center; justify-content:center; flex-direction:column; gap:12px; }
+.overlay.show { display:flex; }
+.spinner { width:40px; height:40px; border:4px solid var(--border); border-top-color:var(--blue); border-radius:50%; animation:spin .7s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* TOAST */
+.toast { position:fixed; top:76px; left:50%; transform:translateX(-50%) translateY(-16px); background:var(--ink); color:white; padding:9px 20px; border-radius:30px; font-size:.84rem; font-weight:600; z-index:9999; opacity:0; transition:all .3s cubic-bezier(.34,1.56,.64,1); white-space:nowrap; pointer-events:none; }
+.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="topbar-left">
+      <h1>📋 บันทึกการมาทำงาน</h1>
+      <div class="sub" id="clock">–</div>
+    </div>
+    <div class="date-pill" onclick="document.getElementById('date-pick').showPicker()">
+      📅 <span id="pill-date">–</span>
+    </div>
+    <input type="date" id="date-pick" onchange="jumpDate(this.value)">
+  </div>
+</div>
+
+<div class="main">
+
+  <div class="date-nav">
+    <button class="nav-arrow" onclick="moveDay(-1)">◀</button>
+    <div class="date-label" id="date-label">–</div>
+    <button class="nav-arrow" onclick="moveDay(1)">▶</button>
+  </div>
+
+  <div class="quick-row">
+    <button class="quick-btn q-p" onclick="setAll('present')">✅ มาทั้งหมด</button>
+    <button class="quick-btn q-a" onclick="setAll('absent')">❌ ไม่มาทั้งหมด</button>
+    <button class="quick-btn q-c" onclick="setAll('none')">↺ ล้าง</button>
+  </div>
+
+  <div class="emp-list" id="emp-list"></div>
+
+  <!-- สรุป -->
+  <div class="fold-card">
+    <div class="fold-head" id="sum-head" onclick="toggleFold('sum')">
+      <span>📊 สรุปการมาทำงาน</span>
+      <span class="fold-chev" id="sum-chev">▼</span>
+    </div>
+    <div class="fold-body" id="sum-body">
+      <div class="sum-range-row">
+        <div class="sum-range-group">
+          <label>จาก</label>
+          <input type="date" id="sum-from">
+        </div>
+        <div class="sum-range-group">
+          <label>ถึง</label>
+          <input type="date" id="sum-to">
+        </div>
+        <button class="btn-sum" onclick="renderSummary()">ดูสรุป</button>
+      </div>
+      <div class="sum-shortcuts">
+        <button onclick="setSumRange('week')">7 วันล่าสุด</button>
+        <button onclick="setSumRange('month')">เดือนนี้</button>
+        <button onclick="setSumRange('lastmonth')">เดือนที่แล้ว</button>
+      </div>
+      <div id="sum-result"></div>
+    </div>
+  </div>
+
+  <div class="result" id="result">
+    <div class="result-title" id="result-title"></div>
+    <div class="result-detail" id="result-detail"></div>
+  </div>
+
+</div>
+
+<div class="save-bar">
+  <div class="save-bar-inner">
+    <div class="save-status">
+      <strong>ส่งข้อมูลทั้ง 8 คน → Google Sheets</strong>
+      กดบันทึกเพื่อส่ง
+    </div>
+    <button class="btn-save" id="save-btn" onclick="saveAndSend()">💾 บันทึก</button>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="spinner"></div>
+  <div style="font-size:.9rem;font-weight:700;color:var(--ink2);">กำลังส่งข้อมูล…</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══ CONFIG ═══════════════════════════════
+var EMPLOYEES = [
+  { id:'e1', name:'ต้อม' },
+  { id:'e2', name:'มืด' },
+  { id:'e3', name:'ภูมิ' },
+  { id:'e4', name:'ยิว' },
+  { id:'e5', name:'เต้ย' },
+  { id:'e6', name:'สม' },
+  { id:'e7', name:'มด' },
+  { id:'e8', name:'กี' }
+];
+var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxp_k9vQ-iID3tPWAtOKH6RI51ziwDGTLpwNoxciRuXglZVI90FEOU5LxOvQjpb7E_FKQ/exec';
+
+// ══ STATE ════════════════════════════════
+var attData = JSON.parse(localStorage.getItem('att4') || '{}');
+var curDate = '';
+
+// ══ DATE UTILS ═══════════════════════════
+function toStr(d) {
+  return d.getFullYear() + '-' +
+    pad(d.getMonth() + 1) + '-' +
+    pad(d.getDate());
+}
+function pad(n) { return String(n).padStart(2, '0'); }
+function todayStr() { return toStr(new Date()); }
+function parseDate(s) {
+  var p = s.split('-');
+  return new Date(+p[0], +p[1] - 1, +p[2]);
+}
+function thaiLong(s) {
+  return parseDate(s).toLocaleDateString('th-TH', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+}
+function thaiShort(s) {
+  return parseDate(s).toLocaleDateString('th-TH', { day:'numeric', month:'short' });
+}
+
+// ══ DATA ═════════════════════════════════
+function getStatus(date, id) { return (attData[date] || {})[id] || 'none'; }
+function getOT(date, id)     { return (attData[date] || {})[id + '_ot'] || ''; }
+
+function saveStatus(date, id, val) {
+  if (!attData[date]) attData[date] = {};
+  attData[date][id] = val;
+  localStorage.setItem('att4', JSON.stringify(attData));
+}
+function saveOT(date, id, val) {
+  if (!attData[date]) attData[date] = {};
+  attData[date][id + '_ot'] = val;
+  localStorage.setItem('att4', JSON.stringify(attData));
+}
+function initials(name) {
+  return name.charAt(0) || '?';
+}
+
+// ══ RENDER ═══════════════════════════════
+function render() {
+  var lbl = thaiLong(curDate);
+  if (curDate === todayStr()) lbl += ' <span class="today-tag">วันนี้</span>';
+  document.getElementById('date-label').innerHTML = lbl;
+  document.getElementById('pill-date').textContent = thaiShort(curDate);
+  document.getElementById('date-pick').value = curDate;
+
+  var list = document.getElementById('emp-list');
+  list.innerHTML = '';
+
+  for (var i = 0; i < EMPLOYEES.length; i++) {
+    var emp = EMPLOYEES[i];
+    var s   = getStatus(curDate, emp.id);
+    var ot  = getOT(curDate, emp.id);
+
+    var cls = s === 'present' ? ' is-present' : s === 'absent' ? ' is-absent' : '';
+    var bc  = s === 'present' ? 'present'     : s === 'absent' ? 'absent'     : 'none';
+    var bt  = s === 'present' ? 'มา'          : s === 'absent' ? 'ไม่มา'     : 'ยังไม่ระบุ';
+    var av  = initials(emp.name);
+    var pOn = s === 'present' ? ' on' : '';
+    var aOn = s === 'absent'  ? ' on' : '';
+
+    var card = document.createElement('div');
+    card.className = 'emp-card' + cls;
+    card.innerHTML =
+      '<div class="emp-num">' + pad(i + 1) + '</div>' +
+      '<div class="emp-avatar">' + av + '</div>' +
+      '<div class="emp-info">' +
+        '<div class="emp-name">' + emp.name + '</div>' +
+        '<span class="emp-badge ' + bc + '">' + bt + '</span>' +
+      '</div>' +
+      '<div class="ot-wrap">' +
+        '<input class="ot-input" type="number" min="0" max="24" step="0.5"' +
+          ' value="' + ot + '" placeholder="0"' +
+          ' onchange="saveOT(\'' + curDate + '\',\'' + emp.id + '\',this.value)"' +
+          ' oninput="saveOT(\'' + curDate + '\',\'' + emp.id + '\',this.value)"' +
+          ' onclick="this.select()">' +
+        '<div class="ot-label">OT<br>ชม.</div>' +
+      '</div>' +
+      '<div class="toggle-wrap">' +
+        '<button class="tog tog-p' + pOn + '" onclick="tap(\'' + emp.id + '\',\'present\')">✅</button>' +
+        '<button class="tog tog-a' + aOn + '" onclick="tap(\'' + emp.id + '\',\'absent\')">❌</button>' +
+      '</div>';
+    list.appendChild(card);
+  }
+}
+
+function tap(id, ns) {
+  var cur = getStatus(curDate, id);
+  saveStatus(curDate, id, cur === ns ? 'none' : ns);
+  render();
+}
+
+function setAll(s) {
+  for (var i = 0; i < EMPLOYEES.length; i++) {
+    saveStatus(curDate, EMPLOYEES[i].id, s);
+  }
+  render();
+  if (s === 'present') showToast('✅ ระบุทุกคนว่ามา');
+  else if (s === 'absent') showToast('❌ ระบุทุกคนว่าไม่มา');
+}
+
+// ══ DATE NAV ═════════════════════════════
+function moveDay(delta) {
+  var d = parseDate(curDate);
+  d.setDate(d.getDate() + delta);
+  curDate = toStr(d);
+  render();
+  hideResult();
+}
+function jumpDate(v) {
+  if (v) { curDate = v; render(); hideResult(); }
+}
+
+// ══ COLLAPSIBLE ══════════════════════════
+function toggleFold(key) {
+  var body = document.getElementById(key + '-body');
+  var chev = document.getElementById(key + '-chev');
+  var head = document.getElementById(key + '-head');
+  var opening = body.classList.toggle('open');
+  chev.classList.toggle('open', opening);
+  head.classList.toggle('open', opening);
+  if (key === 'sum' && opening) renderSummary();
+}
+
+// ══ SUMMARY ══════════════════════════════
+function setSumRange(type) {
+  var now = new Date();
+  var y = now.getFullYear(), m = now.getMonth(), d = now.getDate();
+  var from, to;
+  if (type === 'week') {
+    from = toStr(new Date(y, m, d - 6));
+    to   = toStr(now);
+  } else if (type === 'month') {
+    from = toStr(new Date(y, m, 1));
+    to   = toStr(new Date(y, m + 1, 0));
+  } else if (type === 'lastmonth') {
+    from = toStr(new Date(y, m - 1, 1));
+    to   = toStr(new Date(y, m, 0));
+  }
+  document.getElementById('sum-from').value = from;
+  document.getElementById('sum-to').value   = to;
+  renderSummary();
+}
+
+function renderSummary() {
+  var from = document.getElementById('sum-from').value;
+  var to   = document.getElementById('sum-to').value;
+  var el   = document.getElementById('sum-result');
+
+  if (!from || !to) {
+    el.innerHTML = '<div style="text-align:center;color:var(--ink3);padding:12px;font-size:.82rem;">กรุณาเลือกช่วงวันที่</div>';
+    return;
+  }
+  if (from > to) {
+    el.innerHTML = '<div style="text-align:center;color:var(--red);padding:12px;font-size:.82rem;">วันเริ่มต้องไม่เกินวันสิ้นสุด</div>';
+    return;
+  }
+
+  // สร้างรายการวัน
+  var days = [];
+  var cur = parseDate(from);
+  var end = parseDate(to);
+  while (cur <= end) {
+    days.push(toStr(cur));
+    cur.setDate(cur.getDate() + 1);
+  }
+  var totalDays = days.length;
+
+  var rows = '';
+  for (var i = 0; i < EMPLOYEES.length; i++) {
+    var emp = EMPLOYEES[i];
+    var p = 0, a = 0, n = 0, otSum = 0;
+    for (var j = 0; j < days.length; j++) {
+      var s  = getStatus(days[j], emp.id);
+      var ot = parseFloat(getOT(days[j], emp.id)) || 0;
+      otSum += ot;
+      if (s === 'present') p++;
+      else if (s === 'absent') a++;
+      else n++;
+    }
+    var pct = totalDays > 0 ? Math.round((p / totalDays) * 100) : 0;
+    var pctColor = pct >= 80 ? 'var(--green)' : pct >= 50 ? 'var(--blue)' : 'var(--red)';
+    var otTxt = otSum > 0 ? otSum : '–';
+    rows +=
+      '<tr>' +
+        '<td class="td-name">' + emp.name + '</td>' +
+        '<td class="td-c td-p">' + p + '</td>' +
+        '<td class="td-c td-a">' + a + '</td>' +
+        '<td class="td-c td-n">' + n + '</td>' +
+        '<td class="td-c td-ot">' + otTxt + '</td>' +
+        '<td class="td-c"><span style="color:' + pctColor + ';font-weight:700;">' + pct + '%</span>' +
+          '<div class="pct-bar-wrap"><div class="pct-bar" style="width:' + pct + '%;background:' + pctColor + ';"></div></div>' +
+        '</td>' +
+      '</tr>';
+  }
+
+  el.innerHTML =
+    '<div class="sum-range-label">' + thaiShort(from) + ' — ' + thaiShort(to) + ' (' + totalDays + ' วัน)</div>' +
+    '<div style="overflow-x:auto;border-radius:10px;border:1px solid var(--border);">' +
+    '<table class="sum-table">' +
+      '<thead><tr>' +
+        '<th>ชื่อ</th>' +
+        '<th class="c">มา</th>' +
+        '<th class="c">ไม่มา</th>' +
+        '<th class="c">ไม่ระบุ</th>' +
+        '<th class="c" style="color:var(--blue);">OT ชม.</th>' +
+        '<th class="c">%มา</th>' +
+      '</tr></thead>' +
+      '<tbody>' + rows + '</tbody>' +
+    '</table></div>';
+}
+
+// ══ SAVE & SEND ══════════════════════════
+async function saveAndSend() {
+  var present = [], absent = [], notset = [];
+  for (var i = 0; i < EMPLOYEES.length; i++) {
+    var s = getStatus(curDate, EMPLOYEES[i].id);
+    if (s === 'present') present.push(EMPLOYEES[i]);
+    else if (s === 'absent') absent.push(EMPLOYEES[i]);
+    else notset.push(EMPLOYEES[i]);
+  }
+
+  if (notset.length > 0) {
+    var names = notset.map(function(e) { return e.name; }).join(', ');
+    if (!confirm('ยังมี ' + notset.length + ' คนที่ยังไม่ระบุสถานะ:\n' + names + '\n\nส่งข้อมูลต่อเลยไหม?')) return;
+  }
+
+  document.getElementById('overlay').classList.add('show');
+  document.getElementById('save-btn').disabled = true;
+  hideResult();
+
+  var records = [];
+  for (var i = 0; i < EMPLOYEES.length; i++) {
+    var e  = EMPLOYEES[i];
+    var s  = getStatus(curDate, e.id);
+    var ot = parseFloat(getOT(curDate, e.id)) || 0;
+    records.push({
+      id: e.id, name: e.name,
+      status: s,
+      statusTh: s === 'present' ? 'มา' : s === 'absent' ? 'ไม่มา' : 'ยังไม่ระบุ',
+      ot: ot
+    });
+  }
+
+  var payload = {
+    date: curDate,
+    records: records,
+    summary: { present: present.length, absent: absent.length, notSet: notset.length },
+    sentAt: new Date().toLocaleString('th-TH')
+  };
+
+  try {
+    await fetch(SCRIPT_URL, {
+      method: 'POST', mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    showResult('ok',
+      '✅ ส่งข้อมูลสำเร็จ — ' + thaiLong(curDate),
+      'มา ' + present.length + ' คน  •  ไม่มา ' + absent.length + ' คน  •  ไม่ระบุ ' + notset.length + ' คน\nส่งเมื่อ ' + payload.sentAt
+    );
+    showToast('📊 บันทึกลง Google Sheets แล้ว!');
+  } catch (err) {
+    showResult('err', '❌ ส่งไม่สำเร็จ', 'ตรวจสอบอินเทอร์เน็ต\n' + err.message);
+  } finally {
+    document.getElementById('overlay').classList.remove('show');
+    document.getElementById('save-btn').disabled = false;
+  }
+}
+
+function showResult(t, title, detail) {
+  var el = document.getElementById('result');
+  el.className = 'result show ' + t;
+  document.getElementById('result-title').textContent  = title;
+  document.getElementById('result-detail').textContent = detail;
+  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+function hideResult() { document.getElementById('result').classList.remove('show'); }
+
+// ══ TOAST & CLOCK ════════════════════════
+var toastTimer;
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function() { t.classList.remove('show'); }, 2600);
+}
+function tick() {
+  document.getElementById('clock').textContent =
+    new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+// ══ INIT ═════════════════════════════════
+window.onload = function() {
+  curDate = toStr(new Date());
+  var now = new Date();
+  document.getElementById('sum-from').value = toStr(new Date(now.getFullYear(), now.getMonth(), 1));
+  document.getElementById('sum-to').value   = toStr(new Date(now.getFullYear(), now.getMonth() + 1, 0));
+  render();
+  tick();
+  setInterval(tick, 1000);
+};
+</script>
+</body>
+</html>
