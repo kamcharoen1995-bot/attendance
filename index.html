@@ -226,12 +226,12 @@ var EMPLOYEES = [
   { id:'e1', name:'ต้อม' },
   { id:'e2', name:'มืด' },
   { id:'e3', name:'ภูมิ' },
-  { id:'e4', name:'ยิว' },
   { id:'e5', name:'เต้ย' },
   { id:'e6', name:'สม' },
   { id:'e7', name:'มด' },
   { id:'e8', name:'กี' },
-  { id:'e9', name:'ทองเจือ' }
+  { id:'e9', name:'ทองเจือ' },
+  { id:'e10', name:'ไผ่' }
 ];
 var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxp_k9vQ-iID3tPWAtOKH6RI51ziwDGTLpwNoxciRuXglZVI90FEOU5LxOvQjpb7E_FKQ/exec';
 
@@ -406,48 +406,97 @@ function renderSummary() {
   }
   var totalDays = days.length;
 
-  var rows = '';
-  for (var i = 0; i < EMPLOYEES.length; i++) {
-    var emp = EMPLOYEES[i];
-    var p = 0, a = 0, n = 0, otSum = 0;
+  // ตรวจว่าเป็นช่วงเดือนเดียวไหม — ถ้าใช่แสดง matrix
+  var fromParts = from.split('-');
+  var toParts   = to.split('-');
+  var isOneMonth = fromParts[0] === toParts[0] && fromParts[1] === toParts[1];
+
+  var html = '<div class="sum-range-label">' + thaiShort(from) + ' — ' + thaiShort(to) + ' (' + totalDays + ' วัน)</div>';
+
+  if (isOneMonth) {
+    // ═══ MATRIX TABLE ════════════════════════════
+    html += '<div style="overflow-x:auto;border-radius:10px;border:1px solid var(--border);margin-bottom:12px;">';
+    html += '<table class="sum-table" style="min-width:' + (120 + totalDays * 28) + 'px;">';
+    html += '<thead><tr><th style="position:sticky;left:0;background:var(--bg);z-index:1;min-width:64px;">ชื่อ</th>';
     for (var j = 0; j < days.length; j++) {
-      var s  = getStatus(days[j], emp.id);
-      var ot = parseFloat(getOT(days[j], emp.id)) || 0;
-      otSum += ot;
-      if (s === 'present') p++;
-      else if (s === 'absent') a++;
-      else n++;
+      var dd = parseDate(days[j]);
+      var dayNum = dd.getDate();
+      var dayOfWeek = dd.getDay(); // 0=อา, 6=เสา
+      var isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+      html += '<th class="c" style="min-width:26px;font-size:.65rem;' + (isWeekend ? 'color:var(--red);opacity:.6;' : '') + '">' + dayNum + '</th>';
     }
-    var pct = totalDays > 0 ? Math.round((p / totalDays) * 100) : 0;
-    var pctColor = pct >= 80 ? 'var(--green)' : pct >= 50 ? 'var(--blue)' : 'var(--red)';
-    var otTxt = otSum > 0 ? otSum : '–';
-    rows +=
-      '<tr>' +
-        '<td class="td-name">' + emp.name + '</td>' +
-        '<td class="td-c td-p">' + p + '</td>' +
-        '<td class="td-c td-a">' + a + '</td>' +
-        '<td class="td-c td-n">' + n + '</td>' +
-        '<td class="td-c td-ot">' + otTxt + '</td>' +
-        '<td class="td-c"><span style="color:' + pctColor + ';font-weight:700;">' + pct + '%</span>' +
-          '<div class="pct-bar-wrap"><div class="pct-bar" style="width:' + pct + '%;background:' + pctColor + ';"></div></div>' +
-        '</td>' +
-      '</tr>';
+    html += '<th class="c" style="background:var(--gl);color:var(--green);">มา</th>';
+    html += '<th class="c" style="background:var(--rl);color:var(--red);">ขาด</th>';
+    html += '<th class="c" style="color:var(--blue);">OT</th>';
+    html += '<th class="c">%</th>';
+    html += '</tr></thead><tbody>';
+
+    for (var i = 0; i < EMPLOYEES.length; i++) {
+      var emp = EMPLOYEES[i];
+      var p = 0, a = 0, n = 0, otSum = 0;
+      html += '<tr><td class="td-name" style="position:sticky;left:0;background:white;z-index:1;">' + emp.name + '</td>';
+      for (var j = 0; j < days.length; j++) {
+        var s  = getStatus(days[j], emp.id);
+        var ot = parseFloat(getOT(days[j], emp.id)) || 0;
+        otSum += ot;
+        if (s === 'present') { p++; html += '<td class="td-c" style="background:var(--gl);color:var(--green);font-size:.8rem;">✓</td>'; }
+        else if (s === 'absent') { a++; html += '<td class="td-c" style="background:var(--rl);color:var(--red);font-size:.8rem;">✗</td>'; }
+        else { n++; html += '<td class="td-c" style="color:var(--border);">·</td>'; }
+      }
+      var pct = totalDays > 0 ? Math.round((p / totalDays) * 100) : 0;
+      var pctColor = pct >= 80 ? 'var(--green)' : pct >= 50 ? 'var(--blue)' : 'var(--red)';
+      html += '<td class="td-c td-p">' + p + '</td>';
+      html += '<td class="td-c td-a">' + a + '</td>';
+      html += '<td class="td-c td-ot">' + (otSum > 0 ? otSum : '–') + '</td>';
+      html += '<td class="td-c"><span style="color:' + pctColor + ';font-weight:700;">' + pct + '%</span></td>';
+      html += '</tr>';
+    }
+    html += '</tbody></table></div>';
+
+  } else {
+    // ═══ SUMMARY TABLE (ช่วงหลายเดือน) ══════════
+    var rows = '';
+    for (var i = 0; i < EMPLOYEES.length; i++) {
+      var emp = EMPLOYEES[i];
+      var p = 0, a = 0, n = 0, otSum = 0;
+      for (var j = 0; j < days.length; j++) {
+        var s  = getStatus(days[j], emp.id);
+        var ot = parseFloat(getOT(days[j], emp.id)) || 0;
+        otSum += ot;
+        if (s === 'present') p++;
+        else if (s === 'absent') a++;
+        else n++;
+      }
+      var pct = totalDays > 0 ? Math.round((p / totalDays) * 100) : 0;
+      var pctColor = pct >= 80 ? 'var(--green)' : pct >= 50 ? 'var(--blue)' : 'var(--red)';
+      rows +=
+        '<tr>' +
+          '<td class="td-name">' + emp.name + '</td>' +
+          '<td class="td-c td-p">' + p + '</td>' +
+          '<td class="td-c td-a">' + a + '</td>' +
+          '<td class="td-c td-n">' + n + '</td>' +
+          '<td class="td-c td-ot">' + (otSum > 0 ? otSum : '–') + '</td>' +
+          '<td class="td-c"><span style="color:' + pctColor + ';font-weight:700;">' + pct + '%</span>' +
+            '<div class="pct-bar-wrap"><div class="pct-bar" style="width:' + pct + '%;background:' + pctColor + ';"></div></div>' +
+          '</td>' +
+        '</tr>';
+    }
+    html +=
+      '<div style="overflow-x:auto;border-radius:10px;border:1px solid var(--border);">' +
+      '<table class="sum-table">' +
+        '<thead><tr>' +
+          '<th>ชื่อ</th>' +
+          '<th class="c">มา</th>' +
+          '<th class="c">ไม่มา</th>' +
+          '<th class="c">ไม่ระบุ</th>' +
+          '<th class="c" style="color:var(--blue);">OT ชม.</th>' +
+          '<th class="c">%มา</th>' +
+        '</tr></thead>' +
+        '<tbody>' + rows + '</tbody>' +
+      '</table></div>';
   }
 
-  el.innerHTML =
-    '<div class="sum-range-label">' + thaiShort(from) + ' — ' + thaiShort(to) + ' (' + totalDays + ' วัน)</div>' +
-    '<div style="overflow-x:auto;border-radius:10px;border:1px solid var(--border);">' +
-    '<table class="sum-table">' +
-      '<thead><tr>' +
-        '<th>ชื่อ</th>' +
-        '<th class="c">มา</th>' +
-        '<th class="c">ไม่มา</th>' +
-        '<th class="c">ไม่ระบุ</th>' +
-        '<th class="c" style="color:var(--blue);">OT ชม.</th>' +
-        '<th class="c">%มา</th>' +
-      '</tr></thead>' +
-      '<tbody>' + rows + '</tbody>' +
-    '</table></div>';
+  el.innerHTML = html;
 }
 
 // ══ SAVE & SEND ══════════════════════════
